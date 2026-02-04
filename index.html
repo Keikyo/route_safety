@@ -1,124 +1,145 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stealth Flyer - 飛人安全助手</title>
+    <title>Travel Sync Helper</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
-        .card { background-color: #1e293b; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .card { background-color: #1e293b; border-radius: 1rem; padding: 1.5rem; }
         .check-item { display: flex; align-items: flex-start; margin-bottom: 1rem; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
-        input { background-color: #334155; border: none; border-radius: 0.5rem; padding: 0.5rem; width: 100%; color: white; }
+        input { background-color: #334155; border: none; border-radius: 0.5rem; padding: 0.6rem; width: 100%; color: white; margin-top: 4px; }
+        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="p-4">
     <div class="max-w-md mx-auto">
         <header class="text-center my-6">
-            <h1 class="text-2xl font-bold text-blue-400">🚀 飛人安全行動清單</h1>
-            <p class="text-gray-400 text-sm">Pikmin Bloom / PoGo 適用</p>
+            <h1 class="text-2xl font-bold text-slate-300">📍 Travel Safety & Sync</h1>
+            <p class="text-gray-500 text-xs">Itinerary Buffer & Connection Timer</p>
         </header>
 
-
         <div class="card mb-6">
-            <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="space-y-4 mb-4">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">起點 A</label>
+                    <label class="block text-xs text-gray-400">Departure City (A)</label>
                     <input type="text" id="startLoc" placeholder="例如：新店">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">終點 B</label>
-                    <input type="text" id="endLoc" placeholder="例如：台東">
+                    <label class="block text-xs text-gray-400">Destination City (B)</label>
+                    <input type="text" id="endLoc" placeholder="例如：台東車站">
                 </div>
             </div>
-            <div class="mb-4">
-                <label class="block text-xs text-gray-400 mb-1">估計直線距離 (km)</label>
-                <input type="number" id="distance" placeholder="例如：300" oninput="calculateCooldown()">
-            </div>
-            <div class="text-center p-3 bg-blue-900/30 rounded-lg">
-                <span class="text-sm text-gray-300">建議冷卻時間：</span>
-                <span id="cooldownTime" class="text-xl font-mono font-bold text-yellow-400">0</span>
-                <span class="text-yellow-400"> 分鐘</span>
+            
+            <button id="calcBtn" onclick="autoCalculate()" class="w-full py-2 bg-blue-700 hover:bg-blue-600 rounded-lg text-sm font-bold transition-all mb-4">
+                🔍 獲取距離並生成清單
+            </button>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="text-center p-3 bg-slate-800 rounded-lg border border-slate-700">
+                    <p class="text-[10px] text-gray-400 uppercase">Distance</p>
+                    <span id="displayDist" class="text-lg font-mono font-bold text-emerald-400">0</span>
+                    <span class="text-emerald-400 text-sm"> km</span>
+                </div>
+                <div class="text-center p-3 bg-slate-800 rounded-lg border border-slate-700">
+                    <p class="text-[10px] text-gray-400 uppercase">Buffer Time</p>
+                    <span id="cooldownTime" class="text-lg font-mono font-bold text-blue-400">0</span>
+                    <span class="text-blue-400 text-sm"> min</span>
+                </div>
             </div>
         </div>
-
 
         <div id="todoList" class="card hidden">
-            <h3 class="font-bold mb-4 flex items-center">
-                <span class="mr-2">📝</span> 執行清單
+            <h3 class="font-bold mb-4 flex items-center text-blue-300">
+                <span class="mr-2">📋</span> 行動標準作業程序 (SOP)
             </h3>
             <div id="steps"></div>
-            <button onclick="resetForm()" class="w-full mt-4 py-2 bg-gray-600 rounded-lg text-sm">重設任務</button>
+            <button onclick="location.reload()" class="w-full mt-4 py-2 bg-gray-600 rounded-lg text-xs">重設所有參數</button>
         </div>
-        
-        <button id="genBtn" onclick="generateList()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20">
-            生成防封號 SOP
-        </button>
-
-
-        <footer class="mt-8 text-center text-xs text-gray-500">
-            提醒：此工具僅供學術討論，使用飛人軟體有封號風險。
-        </footer>
     </div>
 
-
     <script>
-        function calculateCooldown() {
-            const dist = document.getElementById('distance').value;
-            let cooldown = 0;
-
-
-            if (dist <= 0) cooldown = 0;
-            else if (dist < 5) cooldown = 2;
-            else if (dist < 10) cooldown = 7;
-            else if (dist < 25) cooldown = 11;
-            else if (dist < 50) cooldown = 20;
-            else if (dist < 100) cooldown = 35;
-            else if (dist < 250) cooldown = 60;
-            else if (dist < 500) cooldown = 90;
-            else cooldown = 120; // 最高 2 小時
-
-
-            document.getElementById('cooldownTime').innerText = cooldown;
-            return cooldown;
+        async function getCoords(city) {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+            }
+            throw new Error('找不到地點');
         }
 
+        function haversine(c1, c2) {
+            const R = 6371; // 地球半徑 km
+            const dLat = (c2.lat - c1.lat) * Math.PI / 180;
+            const dLon = (c2.lon - c1.lon) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(c1.lat * Math.PI / 180) * Math.cos(c2.lat * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
 
-        function generateList() {
-            const start = document.getElementById('startLoc').value || "起點";
-            const end = document.getElementById('endLoc').value || "終點";
-            const cd = calculateCooldown();
-            const listDiv = document.getElementById('todoList');
+        async function autoCalculate() {
+            const btn = document.getElementById('calcBtn');
+            const start = document.getElementById('startLoc').value;
+            const end = document.getElementById('endLoc').value;
+            
+            if(!start || !end) return alert('請輸入起點與終點');
+            
+            btn.innerText = "⏳ 正在估算距離...";
+            btn.classList.add('loading');
+
+            try {
+                const c1 = await getCoords(start);
+                const c2 = await getCoords(end);
+                const dist = haversine(c1, c2);
+                
+                document.getElementById('displayDist').innerText = dist.toFixed(1);
+                const cd = calculateCD(dist);
+                generateList(start, end, cd);
+            } catch (e) {
+                alert('搜尋失敗，請嘗試更精確的地名');
+            } finally {
+                btn.innerText = "🔍 獲取距離並生成清單";
+                btn.classList.remove('loading');
+            }
+        }
+
+        function calculateCD(dist) {
+            let cd = 0;
+            if (dist < 5) cd = 2;
+            else if (dist < 10) cd = 7;
+            else if (dist < 25) cd = 11;
+            else if (dist < 50) cd = 20;
+            else if (dist < 100) cd = 35;
+            else if (dist < 250) cd = 60;
+            else if (dist < 500) cd = 90;
+            else cd = 120;
+            document.getElementById('cooldownTime').innerText = cd;
+            return cd;
+        }
+
+        function generateList(start, end, cd) {
             const stepsDiv = document.getElementById('steps');
-
-
             const steps = [
-                { t: "【準備】徹底關閉遊戲 App，並清除後台暫存。", d: "確保遊戲伺服器最後抓到的座標是 " + start },
-                { t: "【模擬】開啟 Fake GPS，將位置移至 " + end + "。", d: "此時先「不要」開啟遊戲。" },
-                { t: `【冷卻】設定鬧鐘計時 ${cd} 分鐘。`, d: "這段期間絕對不能登入遊戲。建議放下手機去做別的事。" },
-                { t: "【行動】鬧鐘響後，進入遊戲領取目標物。", d: "拿完就走，不要在附近停留或種花太久。" },
-                { t: "【撤退】再次關閉遊戲，並停止模擬定位。", d: "若要回 " + start + "，需再重複一次冷卻流程。" }
+                { t: "徹底殺掉後台", d: "1. 向上滑掉 App。 2. 進入『系統設定 > 應用程式 > Pikmin Bloom』點擊『強制停止』。" },
+                { t: "切斷環境關聯", d: "關閉手機 WiFi 與 GPS 總開關，改用行動數據。" },
+                { t: `啟動模擬定位至 ${end}`, d: "開啟 Fake GPS 軟體並鎖定座標，但先『不要』開啟遊戲。" },
+                { t: `啟動安全冷卻：${cd} 分鐘`, d: `設定鬧鐘。這段期間嚴禁開啟遊戲，確保伺服器認為你在移動。` },
+                { t: "完成任務並撤退", d: "領取獎勵後立即關閉遊戲，並重複『強制停止』步驟後再切換回真實定位。" }
             ];
 
-
-            stepsDiv.innerHTML = steps.map((s, i) => `
+            stepsDiv.innerHTML = steps.map(s => `
                 <div class="check-item">
                     <input type="checkbox" class="w-5 h-5 mt-1 mr-3 accent-blue-500">
                     <div>
-                        <p class="text-sm font-medium">${s.t}</p>
-                        <p class="text-xs text-gray-400">${s.d}</p>
+                        <p class="text-sm font-medium text-slate-200">${s.t}</p>
+                        <p class="text-[11px] text-gray-500 leading-tight">${s.d}</p>
                     </div>
                 </div>
             `).join('');
 
-
-            listDiv.classList.remove('hidden');
-            document.getElementById('genBtn').classList.add('hidden');
-        }
-
-
-        function resetForm() {
-            location.reload();
+            document.getElementById('todoList').classList.remove('hidden');
         }
     </script>
 </body>
