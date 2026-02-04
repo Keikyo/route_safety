@@ -1,0 +1,125 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stealth Flyer - 飛人安全助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+        .card { background-color: #1e293b; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .check-item { display: flex; align-items: flex-start; margin-bottom: 1rem; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
+        input { background-color: #334155; border: none; border-radius: 0.5rem; padding: 0.5rem; width: 100%; color: white; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-md mx-auto">
+        <header class="text-center my-6">
+            <h1 class="text-2xl font-bold text-blue-400">🚀 飛人安全行動清單</h1>
+            <p class="text-gray-400 text-sm">Pikmin Bloom / PoGo 適用</p>
+        </header>
+
+
+        <div class="card mb-6">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">起點 A</label>
+                    <input type="text" id="startLoc" placeholder="例如：新店">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">終點 B</label>
+                    <input type="text" id="endLoc" placeholder="例如：台東">
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-xs text-gray-400 mb-1">估計直線距離 (km)</label>
+                <input type="number" id="distance" placeholder="例如：300" oninput="calculateCooldown()">
+            </div>
+            <div class="text-center p-3 bg-blue-900/30 rounded-lg">
+                <span class="text-sm text-gray-300">建議冷卻時間：</span>
+                <span id="cooldownTime" class="text-xl font-mono font-bold text-yellow-400">0</span>
+                <span class="text-yellow-400"> 分鐘</span>
+            </div>
+        </div>
+
+
+        <div id="todoList" class="card hidden">
+            <h3 class="font-bold mb-4 flex items-center">
+                <span class="mr-2">📝</span> 執行清單
+            </h3>
+            <div id="steps"></div>
+            <button onclick="resetForm()" class="w-full mt-4 py-2 bg-gray-600 rounded-lg text-sm">重設任務</button>
+        </div>
+        
+        <button id="genBtn" onclick="generateList()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20">
+            生成防封號 SOP
+        </button>
+
+
+        <footer class="mt-8 text-center text-xs text-gray-500">
+            提醒：此工具僅供學術討論，使用飛人軟體有封號風險。
+        </footer>
+    </div>
+
+
+    <script>
+        function calculateCooldown() {
+            const dist = document.getElementById('distance').value;
+            let cooldown = 0;
+
+
+            if (dist <= 0) cooldown = 0;
+            else if (dist < 5) cooldown = 2;
+            else if (dist < 10) cooldown = 7;
+            else if (dist < 25) cooldown = 11;
+            else if (dist < 50) cooldown = 20;
+            else if (dist < 100) cooldown = 35;
+            else if (dist < 250) cooldown = 60;
+            else if (dist < 500) cooldown = 90;
+            else cooldown = 120; // 最高 2 小時
+
+
+            document.getElementById('cooldownTime').innerText = cooldown;
+            return cooldown;
+        }
+
+
+        function generateList() {
+            const start = document.getElementById('startLoc').value || "起點";
+            const end = document.getElementById('endLoc').value || "終點";
+            const cd = calculateCooldown();
+            const listDiv = document.getElementById('todoList');
+            const stepsDiv = document.getElementById('steps');
+
+
+            const steps = [
+                { t: "【準備】徹底關閉遊戲 App，並清除後台暫存。", d: "確保遊戲伺服器最後抓到的座標是 " + start },
+                { t: "【模擬】開啟 Fake GPS，將位置移至 " + end + "。", d: "此時先「不要」開啟遊戲。" },
+                { t: `【冷卻】設定鬧鐘計時 ${cd} 分鐘。`, d: "這段期間絕對不能登入遊戲。建議放下手機去做別的事。" },
+                { t: "【行動】鬧鐘響後，進入遊戲領取目標物。", d: "拿完就走，不要在附近停留或種花太久。" },
+                { t: "【撤退】再次關閉遊戲，並停止模擬定位。", d: "若要回 " + start + "，需再重複一次冷卻流程。" }
+            ];
+
+
+            stepsDiv.innerHTML = steps.map((s, i) => `
+                <div class="check-item">
+                    <input type="checkbox" class="w-5 h-5 mt-1 mr-3 accent-blue-500">
+                    <div>
+                        <p class="text-sm font-medium">${s.t}</p>
+                        <p class="text-xs text-gray-400">${s.d}</p>
+                    </div>
+                </div>
+            `).join('');
+
+
+            listDiv.classList.remove('hidden');
+            document.getElementById('genBtn').classList.add('hidden');
+        }
+
+
+        function resetForm() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
